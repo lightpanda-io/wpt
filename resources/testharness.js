@@ -10,8 +10,8 @@
     var settings = {
         output:true,
         harness_timeout:{
-            "normal":10000,
-            "long":60000
+            "normal":100,
+            "long":600
         },
         test_timeout:null,
         message_events: ["start", "test_state", "result", "completion"],
