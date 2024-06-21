@@ -4,31 +4,33 @@
  */
 var report = {
   status: "",
-  log: "",
+  log: "no test suite completion|Fail|The test never reaches the completion callback.",
+  cases: {},
 };
 
-add_completion_callback(function (tests, status) {
-  // report the tests global status.
-  // TODO the status.status is always OK even if a test fail.
-  // I ignore the global status for now, but I build one with the tests results.
-  //report.status = status.status;
-
-  var status = "Pass";
-  // report a log with details per test.
-  var log = "";
-  for (var i = 0; i < tests.length; i++) {
-    const test = tests[i];
-    log += test.name+"|"+test.format_status();
-    if (test.message != null) {
-      log +=  "|"+test.message.replaceAll("\n"," ");
-    }
-    log += "\n";
-
-    if (test.status !== 0) {
-      status = test.format_status();
-    }
+function format(test) {
+  var log = test.name+"|"+test.format_status();
+  if (test.message != null) {
+    log +=  "|"+test.message.replaceAll("\n"," ");
   }
 
+  return log;
+}
+
+function update() {
+  var log = "";
+  Object.keys(report.cases).forEach((k, i) => {
+    log += report.cases[k] + "\n";
+  });
   report.log = log;
-  report.status = status;
+}
+
+add_test_state_callback(function (test) {
+  report.cases[test.name] = format(test);
+  update();
+});
+
+add_result_callback(function (test) {
+  report.cases[test.name] = format(test);
+  update();
 });
