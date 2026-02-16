@@ -8,8 +8,12 @@ var report = {
   cases: {},
 };
 
+function name(test) {
+  return  test.name.replace(/\n/g, '');
+}
+
 function format(test) {
-  var log = test.name+"|"+test.format_status();
+  var log = name(test)+"|"+test.format_status();
   if (test.message != null) {
     log +=  "|"+test.message.replaceAll("\n"," ");
   }
@@ -26,11 +30,11 @@ function update() {
 }
 
 add_test_state_callback(function (test) {
-  report.cases[test.name] = format(test);
+  report.cases[name(test)] = format(test);
   update();
 });
 
 add_result_callback(function (test) {
-  report.cases[test.name] = format(test);
+  report.cases[name(test)] = format(test);
   update();
 });
