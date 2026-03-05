@@ -3,6 +3,7 @@
  * https://wpt-docs.readthedocs.io/en/latest/_writing-tests/testharness-api.html#callback-api
  */
 var report = {
+  complete: false,
   status: "",
   log: "no test suite completion|Fail|The test never reaches the completion callback.",
   cases: {},
@@ -37,4 +38,8 @@ add_test_state_callback(function (test) {
 add_result_callback(function (test) {
   report.cases[name(test)] = format(test);
   update();
+});
+
+add_completion_callback(function (tests, status) {
+  report.complete = true;
 });
