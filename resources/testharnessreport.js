@@ -7,19 +7,17 @@ var report = {
   status: "",
   log: "no test suite completion|Fail|The test never reaches the completion callback.",
   cases: {},
-};
-
-function name(test) {
-  return  test.name.replace(/\n/g, '');
-}
-
-function format(test) {
-  var log = name(test)+"|"+test.format_status();
-  if (test.message != null) {
-    log +=  "|"+test.message.replaceAll("\n"," ");
+  name: function(test) {
+    const name = test.name;
+    return name ? name.replace(/\n/g, '') : name;
+  },
+  format: function(test) {
+    var log = report.name(test)+"|"+test.format_status();
+    if (test.message != null) {
+      log +=  "|"+test.message.replaceAll("\n"," ");
+    }
+    return log;
   }
-
-  return log;
 }
 
 function update() {
@@ -31,12 +29,12 @@ function update() {
 }
 
 add_test_state_callback(function (test) {
-  report.cases[name(test)] = format(test);
+  report.cases[report.name(test)] = report.format(test);
   update();
 });
 
 add_result_callback(function (test) {
-  report.cases[name(test)] = format(test);
+  report.cases[report.name(test)] = report.format(test);
   update();
 });
 
