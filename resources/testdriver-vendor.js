@@ -12,3 +12,8 @@ window.test_driver_internal.click = function(element, coords) {
 window.test_driver_internal.get_computed_label = function(element) {
 	return Promise.resolve(window.webdriver.getComputedLabel(element));
 };
+
+window.test_driver_internal.action_sequence = function(actions, context) {
+	window.webdriver.actionSequence(actions);
+	return Promise.resolve();
+};
