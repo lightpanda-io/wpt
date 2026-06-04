@@ -17,25 +17,24 @@ var report = {
       log +=  "|"+test.message.replaceAll("\n"," ");
     }
     return log;
+  },
+  update: function() {
+    var log = "";
+    Object.keys(report.cases).forEach((k, i) => {
+      log += report.cases[k] + "\n";
+    });
+    report.log = log;
   }
-}
-
-function update() {
-  var log = "";
-  Object.keys(report.cases).forEach((k, i) => {
-    log += report.cases[k] + "\n";
-  });
-  report.log = log;
 }
 
 add_test_state_callback(function (test) {
   report.cases[report.name(test)] = report.format(test);
-  update();
+  report.update();
 });
 
 add_result_callback(function (test) {
   report.cases[report.name(test)] = report.format(test);
-  update();
+  report.update();
 });
 
 add_completion_callback(function (tests, status) {
