@@ -13,7 +13,8 @@ def default_capabilities(request):
     baseline fingerprinting protection (bFPP) enabled in Nightly,
     screen.availWidth/Height are spoofed while window dimensions are not,
     causing the heuristic to fail.
-    See https://bugzilla.mozilla.org/show_bug.cgi?id=1990514 for details.
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=1990514 for details about Linux.
+    See https://bugzilla.mozilla.org/show_bug.cgi?id=2016273 for the future fix for Mac.
     """
     capabilities = request.getfixturevalue("default_capabilities")
 
