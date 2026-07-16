@@ -14,6 +14,5 @@ window.test_driver_internal.get_computed_label = function(element) {
 };
 
 window.test_driver_internal.action_sequence = function(actions, context) {
-	window.webdriver.actionSequence(actions);
-	return Promise.resolve();
+	return window.webdriver.actionSequence(actions);
 };
