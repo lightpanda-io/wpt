@@ -5,8 +5,19 @@
 var report = {
   complete: false,
   status: "",
-  log: "no test suite completion|Fail|The test never reaches the completion callback.",
   cases: {},
+
+  get log() {
+    const keys = Object.keys(report.cases);
+    if (keys.length === 0) {
+      return "no test suite completion|Fail|The test never reaches the completion callback.";
+    }
+    var log = "";
+    for (const k of keys) {
+      log += report.cases[k] + "\n";
+    }
+    return log;
+  },
   name: function(test) {
     const name = test.name;
     return name ? name.replace(/\n/g, '') : name;
@@ -17,24 +28,15 @@ var report = {
       log +=  "|"+test.message.replaceAll("\n"," ");
     }
     return log;
-  },
-  update: function() {
-    var log = "";
-    Object.keys(report.cases).forEach((k, i) => {
-      log += report.cases[k] + "\n";
-    });
-    report.log = log;
   }
 }
 
 add_test_state_callback(function (test) {
   report.cases[report.name(test)] = report.format(test);
-  report.update();
 });
 
 add_result_callback(function (test) {
   report.cases[report.name(test)] = report.format(test);
-  report.update();
 });
 
 add_completion_callback(function (tests, status) {
