@@ -28,3 +28,34 @@ window.test_driver_internal.get_named_cookie = function(name, context) {
 window.test_driver_internal.action_sequence = function(actions, context) {
 	return window.webdriver.actionSequence(actions);
 };
+
+// WebDriver "Element Send Keys": focus the element, then a down/up pair per key.
+window.test_driver_internal.send_keys = function(element, keys) {
+	element.focus();
+	const NULL_KEY = '\uE000';
+	const MODIFIERS = new Set(['\uE008', '\uE009', '\uE00A', '\uE03D', '\uE050', '\uE051', '\uE052', '\uE053']);
+
+	// hold modifier down until special NULL_KEY, then release themall
+	const held = [];
+	const actions = [];
+	const releaseHeld = (at) => {
+		while (held.length) {
+			actions.splice(at, 0, {type: "keyUp", value: held.pop()});
+		}
+	};
+
+	for (const key of keys) {
+		if (key === NULL_KEY) {
+			releaseHeld(actions.length);
+		} else if (MODIFIERS.has(key)) {
+			actions.push({type: "keyDown", value: key});
+			held.push(key);
+		} else {
+			actions.push({type: "keyDown", value: key});
+			actions.push({type: "keyUp", value: key});
+		}
+	}
+	const last = actions[actions.length - 1];
+	releaseHeld(last && last.type === "keyUp" ? actions.length - 1 : actions.length);
+	return window.webdriver.actionSequence([{type: "key", actions}]);
+};
