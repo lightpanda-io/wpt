@@ -4,6 +4,8 @@
  */
 var report = {
   complete: false,
+  // Number of subtests with a result. wptrunner polls it to detect progress.
+  completed: 0,
   status: "",
   cases: {},
 
@@ -36,6 +38,7 @@ add_test_state_callback(function (test) {
 });
 
 add_result_callback(function (test) {
+  report.completed++;
   report.cases[report.name(test)] = report.format(test);
 });
 
