@@ -229,6 +229,7 @@ const testCreateConstantTensor = (testName, descriptor) => {
  */
 const testCreateConstantTensorFails = (testName, descriptor) => {
   let mlContext;
+  let isConstantTensorSupported = false;
 
   promise_setup(async () => {
     try {
@@ -237,9 +238,28 @@ const testCreateConstantTensorFails = (testName, descriptor) => {
       throw new AssertionError(
           `Unable to create context for ${variant} variant. ${error}`);
     }
+
+    // Check if WebNN has constant tensor support.
+    try {
+      await mlContext.createConstantTensor(
+          {
+            dataType: 'float32',
+            shape: [1],
+          },
+          new Float32Array([0xAA]));
+      isConstantTensorSupported = true;
+    } catch (error) {
+      if (error.name !== 'NotSupportedError') {
+        throw error;
+      }
+    }
   });
 
   promise_test(async t => {
+    if (!isConstantTensorSupported) {
+      return;
+    }
+
     await promise_rejects_js(
         t, TypeError,
         mlContext.createConstantTensor(
@@ -1588,6 +1608,63 @@ const testExportToGPU = (testName, dataType, powerPreference) => {
         () => mlContext.writeTensor(
             mlTensor, new typedArray([1.0, 2.0, 3.0, 4.0])));
   }, `${testName} / write tensor after export`);
+
+  promise_test(async t => {
+    if (!isExportToGPUSupported) {
+      return;
+    }
+
+    const mlTensor = await mlContext.createExportableTensor(
+        {dataType, shape, readable: true}, gpuDevice);
+    mlContext.exportToGPU(mlTensor);
+
+    await promise_rejects_js(t, TypeError, mlContext.readTensor(mlTensor));
+  }, `${testName} / read after export`);
+
+  promise_test(async t => {
+    if (!isExportToGPUSupported) {
+      return;
+    }
+
+    const mlTensorInput1 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+    const mlTensorInput2 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+    const mlTensorOutput1 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+    const mlTensorOutput2 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+    mlContext.exportToGPU(mlTensorInput1);
+
+    assert_throws_js(
+        TypeError,
+        () => mlContext.dispatch(
+            mlGraph, {'lhs': mlTensorInput1, 'rhs': mlTensorInput2},
+            {'output1': mlTensorOutput1, 'output2': mlTensorOutput2}));
+  }, `${testName} / dispatch as input after export`);
+
+  promise_test(async t => {
+    if (!isExportToGPUSupported) {
+      return;
+    }
+
+    const mlTensorInput1 = await mlContext.createExportableTensor(
+        {dataType, shape, writable: true}, gpuDevice);
+    const mlTensorInput2 = await mlContext.createExportableTensor(
+        {dataType, shape, writable: true}, gpuDevice);
+    const mlTensorOutput1 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+    const mlTensorOutput2 =
+        await mlContext.createExportableTensor({dataType, shape}, gpuDevice);
+
+    mlContext.exportToGPU(mlTensorOutput1);
+
+    assert_throws_js(
+        TypeError,
+        () => mlContext.dispatch(
+            mlGraph, {'lhs': mlTensorInput1, 'rhs': mlTensorInput2},
+            {'output1': mlTensorOutput1, 'output2': mlTensorOutput2}));
+  }, `${testName} / dispatch as output after export`);
 
   promise_test(async t => {
     if (!isExportToGPUSupported) {

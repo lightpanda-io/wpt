@@ -1,3 +1,7 @@
+# META: timeout=long
+
+# Longer timeout required due to a large number of navigation, frame, or browser lifecycle subtests.
+
 import asyncio
 import pytest
 from webdriver.error import TimeoutException
@@ -84,6 +88,7 @@ async def test_with_csp_meta_tag(
 
     contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     iframe_context = contexts[0]["children"][0]["context"]
+    iframe_user_context = contexts[0]["children"][0]["userContext"]
 
     started_event_for_iframe = next(
         event for event in events if event["context"] == iframe_context
@@ -96,6 +101,7 @@ async def test_with_csp_meta_tag(
             "context": iframe_context,
             "navigation": started_event_for_iframe["navigation"],
             "url": iframe_url,
+            **({"userContext": iframe_user_context} if "userContext" in event else {})
         },
     )
 
@@ -145,6 +151,7 @@ async def test_with_content_blocking_header_in_top_context(
 
     contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     iframe_context = contexts[0]["children"][0]["context"]
+    iframe_user_context = contexts[0]["children"][0]["userContext"]
 
     started_event_for_iframe = next(
         event for event in events if event["context"] == iframe_context
@@ -157,6 +164,7 @@ async def test_with_content_blocking_header_in_top_context(
             "context": iframe_context,
             "navigation": started_event_for_iframe["navigation"],
             "url": iframe_url,
+            **({"userContext": iframe_user_context} if "userContext" in event else {})
         },
     )
 
@@ -210,6 +218,7 @@ async def test_with_x_frame_options_header(
 
     contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     iframe_context = contexts[0]["children"][0]["context"]
+    iframe_user_context = contexts[0]["children"][0]["userContext"]
 
     started_event_for_iframe = next(
         event for event in events if event["context"] == iframe_context
@@ -222,6 +231,7 @@ async def test_with_x_frame_options_header(
             "context": iframe_context,
             "navigation": started_event_for_iframe["navigation"],
             "url": iframe_url,
+            **({"userContext": iframe_user_context} if "userContext" in event else {})
         },
     )
 
@@ -277,6 +287,7 @@ async def test_with_new_navigation(
             "context": new_tab["context"],
             "navigation": result["navigation"],
             "url": slow_page_url,
+            **({"userContext": new_tab["userContext"]} if "userContext" in events[0] else {})
         },
     )
 
@@ -338,6 +349,7 @@ async def test_with_new_navigation_inside_page(
             "context": new_tab["context"],
             "navigation": result["navigation"],
             "url": slow_page_url,
+            **({"userContext": new_tab["userContext"]} if "userContext" in events[0] else {})
         },
     )
 
@@ -390,6 +402,7 @@ async def test_close_context(
             "context": new_context["context"],
             "navigation": result["navigation"],
             "url": slow_page_url,
+            **({"userContext": new_context["userContext"]} if "userContext" in events[0] else {})
         },
     )
 
@@ -422,6 +435,7 @@ async def test_close_iframe(
 
     contexts = await bidi_session.browsing_context.get_tree(root=new_tab["context"])
     iframe_context = contexts[0]["children"][0]["context"]
+    iframe_user_context = contexts[0]["children"][0]["userContext"]
 
     slow_page_url = url(
         "/webdriver/tests/bidi/browsing_context/support/empty.html?pipe=trickle(d10)"
@@ -453,6 +467,7 @@ async def test_close_iframe(
             "context": iframe_context,
             "navigation": result["navigation"],
             "url": slow_page_url,
+            **({"userContext": iframe_user_context} if "userContext" in events[0] else {})
         },
     )
 
@@ -510,5 +525,6 @@ async def test_with_beforeunload_prompt(
             "context": new_tab["context"],
             "navigation": navigation_started_event["navigation"],
             "url": target_url,
+            **({"userContext": new_tab["userContext"]} if "userContext" in event else {})
         },
     )

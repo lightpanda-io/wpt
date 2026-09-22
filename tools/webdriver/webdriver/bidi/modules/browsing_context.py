@@ -38,6 +38,33 @@ class FormatOptions(Dict[str, Any]):
             self["quality"] = quality
 
 
+class ImageSizeOptions(Dict[str, Any]):
+    def __init__(
+        self,
+        max_height: Optional[int] = None,
+        max_width: Optional[int] = None,
+    ):
+        if max_height is not None:
+            self["maxHeight"] = max_height
+        if max_width is not None:
+            self["maxWidth"] = max_width
+
+
+class VideoOptions(Dict[str, Any]):
+    def __init__(
+        self,
+        frame_rate: Optional[int] = None,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
+    ):
+        if frame_rate is not None:
+            self["frameRate"] = frame_rate
+        if height is not None:
+            self["height"] = height
+        if width is not None:
+            self["width"] = width
+
+
 class BrowsingContext(BidiModule):
     @command
     def activate(self, context: str) -> Mapping[str, Any]:
@@ -50,6 +77,7 @@ class BrowsingContext(BidiModule):
         clip: Optional[ClipOptions] = None,
         origin: Optional[OriginOptions] = None,
         format: Optional[FormatOptions] = None,
+        image_size: Optional[ImageSizeOptions] = None,
     ) -> Mapping[str, Any]:
         params: MutableMapping[str, Any] = {"context": context}
 
@@ -59,6 +87,8 @@ class BrowsingContext(BidiModule):
             params["clip"] = clip
         if origin is not None:
             params["origin"] = origin
+        if image_size is not None:
+            params["imageSize"] = image_size
 
         return params
 
@@ -101,6 +131,8 @@ class BrowsingContext(BidiModule):
     @create.result
     def _create(self, result: Mapping[str, Any]) -> Any:
         assert isinstance(result["context"], str)
+        if "userContext" in result:
+            assert isinstance(result["userContext"], str)
 
         return result
 
@@ -162,7 +194,7 @@ class BrowsingContext(BidiModule):
         for node in result["nodes"]:
             self._assert_node_remote_value(node)
 
-        return result
+        return result["nodes"]
 
     @command
     def navigate(self,
@@ -253,6 +285,46 @@ class BrowsingContext(BidiModule):
             params["userContexts"] = user_contexts
 
         return params
+
+    @command
+    def start_screencast(self,
+                         context: str,
+                         destination_folder: Optional[str] = None,
+                         video: Optional[VideoOptions] = None,
+                         audio: Optional[bool] = None,
+                         mime_type: Optional[str] = None) -> Mapping[str, Any]:
+        params: MutableMapping[str, Any] = {"context": context}
+
+        if destination_folder is not None:
+            params["destinationFolder"] = destination_folder
+        if video is not None:
+            params["video"] = video
+        if audio is not None:
+            params["audio"] = audio
+        if mime_type is not None:
+            params["mimeType"] = mime_type
+
+        return params
+
+    @start_screencast.result
+    def _start_screencast(self, result: Mapping[str, Any]) -> Any:
+        assert isinstance(result["path"], str)
+        assert isinstance(result["screencast"], str)
+
+        return result
+
+    @command
+    def stop_screencast(self, screencast: str) -> Mapping[str, Any]:
+        return {"screencast": screencast}
+
+    @stop_screencast.result
+    def _stop_screencast(self, result: Mapping[str, Any]) -> Any:
+        assert isinstance(result["path"], str)
+
+        if "error" in result:
+            assert isinstance(result["error"], str)
+
+        return result
 
     @command
     def traverse_history(self, context: str, delta: int) -> Mapping[str, Any]:

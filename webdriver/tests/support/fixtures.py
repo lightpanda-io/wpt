@@ -5,7 +5,7 @@ import os
 import pytest
 import webdriver
 
-from urllib.parse import urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from tests.support.helpers import deep_update, is_wayland
 from tests.support.web_extension import EXTENSION_DATA
@@ -255,6 +255,12 @@ def get_test_page(iframe, inline):
                 """
 
         page_data = f"""
+            <!-- This is used for tests which check the event position synthesized via
+                TestDriver. Therefore, if the page is initially scaled to non-100%,
+                TestDriver needs to floor the specified position so that the event may be
+                fired at different position. Thus, we need to fix the scale here. -->
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+
             <style>
                 custom-element {{
                     display:block; width:20px; height:20px;
@@ -349,6 +355,31 @@ def test_page_cross_origin_frame(inline, test_page_cross_origin):
 @pytest.fixture
 def test_page_same_origin_frame(inline, test_page):
     return inline(f"<iframe src='{test_page}'></iframe>")
+
+
+@pytest.fixture
+def test_actions_wheel_page(url):
+    def _test_actions_wheel_page(events=None, **kwargs):
+        """Build the URL for the wheel actions test page.
+
+        :param events: Optional list of event types ("wheel", "scroll",
+            "scrollend") to register listeners for. Defaults to all of them.
+        """
+        base = "/webdriver/tests/support/html/wheel/test_actions.html"
+
+        if "iframe_domain" in kwargs:
+            domain = kwargs.pop("iframe_domain")
+            origin = urlsplit(url("", domain=domain))
+            kwargs["iframe_origin"] = f"{origin.scheme}://{origin.netloc}"
+
+        if events is not None:
+            kwargs["events"] = ",".join(events)
+
+        params = "&".join(f"{k}={v}" for k, v in kwargs.items())
+
+        return url(f"{base}?{params}" if params else base)
+
+    return _test_actions_wheel_page
 
 
 @pytest.fixture

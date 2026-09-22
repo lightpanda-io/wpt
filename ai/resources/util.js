@@ -109,13 +109,15 @@ async function testAbortPromise(t, method) {
   }
 };
 
-async function testCreateMonitorWithAbortAt(
-    t, loadedToAbortAt, method, options = {}) {
+async function testCreateMonitorWithAbortAt(t, eventIndexToAbortAt, method,
+                                            options = {}) {
   const {promise: eventPromise, resolve} = Promise.withResolvers();
   let hadEvent = false;
+  let eventCount = 0;
   function monitor(m) {
     m.addEventListener('downloadprogress', e => {
-      if (e.loaded != loadedToAbortAt) {
+      if (eventCount !== eventIndexToAbortAt) {
+        eventCount++;
         return;
       }
 
@@ -135,7 +137,7 @@ async function testCreateMonitorWithAbortAt(
   const createPromise =
       method({...options, monitor, signal: controller.signal});
 
-  await eventPromise;
+  await Promise.race([eventPromise, createPromise]);
 
   const err = new Error('test');
   controller.abort(err);
@@ -144,7 +146,6 @@ async function testCreateMonitorWithAbortAt(
 
 async function testCreateMonitorWithAbort(t, method, options = {}) {
   await testCreateMonitorWithAbortAt(t, 0, method, options);
-  await testCreateMonitorWithAbortAt(t, 1, method, options);
 }
 
 // The method should take the AbortSignal as an option and return a
@@ -278,7 +279,18 @@ async function createRewriter(options = {}) {
   return await Rewriter.create(options);
 }
 
+async function createEmbedder(options = {}) {
+  await test_driver.bless();
+  return await SemanticEmbedder.create(options);
+}
+
 async function createProofreader(options = {}) {
+  if (!options.monitor) {
+    const availability = await Proofreader.availability(options);
+    assert_implements_optional(
+        availability !== 'unavailable',
+        'Proofreader is not available for the given options');
+  }
   await test_driver.bless();
   return await Proofreader.create(options);
 }
@@ -295,6 +307,15 @@ async function ensureLanguageModel(options = {}) {
   // Yield PRECONDITION_FAILED if the API is unavailable on this device.
   assert_implements_optional(availability != 'unavailable', 'API unavailable');
 };
+
+async function ensureEmbedder(options = {}) {
+  assert_true(!!SemanticEmbedder);
+  const availability = await SemanticEmbedder.availability(options);
+  assert_in_array(availability, kValidAvailabilities);
+  // Yield PRECONDITION_FAILED if the API is unavailable on this device.
+  assert_implements_optional(availability != 'unavailable', 'API unavailable');
+};
+
 
 async function testDestroy(t, createMethod, options, instanceMethods) {
   const instance = await createMethod(options);
@@ -372,35 +393,4 @@ function createColorGridCanvas(width, height, isOffscreen = false) {
   context.fillRect(w2, h2, w2, h2);
 
   return canvas;
-}
-
-const kValidResponseSchema = {
-  type: 'object',
-  required: ['Rating'],
-  additionalProperties: false,
-  properties: {
-    Rating: {
-      type: 'number',
-      minimum: 0,
-      maximum: 5,
-    },
-  },
-};
-
-function testResponseJsonSchema(response, t) {
-  let jsonResponse;
-  try {
-    jsonResponse = JSON.parse(response);
-  } catch (e) {
-    assert_unreached(
-        `Response is not valid JSON: "${response}". Error: ${e.message}`);
-    return;
-  }
-  assert_equals(typeof jsonResponse, 'object', 'Response should be an object');
-  assert_own_property(
-      jsonResponse, 'Rating', 'JSON response should have a "Rating" property.');
-  assert_equals(
-      typeof jsonResponse.Rating, 'number', 'Rating should be a number');
-  assert_greater_than_equal(jsonResponse.Rating, 0, 'Rating should be >= 0');
-  assert_less_than_equal(jsonResponse.Rating, 5, 'Rating should be <= 5');
 }

@@ -70,13 +70,43 @@ one or more subtests that run to completion, as well as several subtests who's
 results will not be recorded. This is because each test file should show how the
 **same markup** is exposed in each supporting accessibility APIs/platforms.
 
-### Package dependencies for Linux API AT-SPI Python Bindings
+## Running tests
+
+These test can be run with `wpt run` but not `wpt serve`.
+
+### Linux
 
 In order to test the Linux API AT-SPI, you need to have the following packages
 installed:
 
 ```
 sudo apt install libatspi2.0-dev libcairo2-dev libgirepository1.0-dev
+```
+
+You can run the tests with:
+```
+$ ./wpt run firefox core-aam/aamtests/role/blockquote.py
+```
+
+To add useful logging:
+```
+$ ./wpt run  --log-mach-level debug --log-mach - firefox core-aam/aamtests/role/blockquote.py
+```
+
+### macOS
+
+When running these tests on macOS, provide the option `--no-headless`. Otherwise the accessibility API will not be enabled.
+
+```
+$ ./wpt run --no-headless chrome core-aam/aamtests/role/blockquote.py
+```
+
+### Windows
+
+When running these tests on macOS, provide the option `--no-headless`. Otherwise the accessibility API will not be enabled. Additionally, the binaries for the browser and the webdriver binary must be provided on a Windows machine.
+
+```
+$ python wpt.py run chrome --no-headless --binary="C:\Program Files\Google\Chrome\Application\chrome.exe" --webdriver-binary="C:\whatever\the\path\to\chromedriver" core-aam\aamtests\role\blockquote.py
 ```
 
 ## Adding new tests
@@ -130,6 +160,22 @@ def test_axapi(axapi, session, inline):
     node = axapi.find_node("test", session.url)
     role = axapi.AXUIElementCopyAttributeValue(node, "AXRole", None)[1]
     assert role == "AXFoobar"
+```
+
+### Testing events
+
+Testing events fired by the accessibility API is possible with the
+`expect_event()` method. It registers a listener for the event, runs an action
+to trigger it, then blocks until the event arrives and returns it. If the event
+never arrives, it raises `TimeoutError`.
+
+For example, waiting for an `object:state-changed:foobar` event in AT-SPI:
+```python
+event = atspi.expect_event(
+    "object:state-changed:foobar", dom_id="test",
+    # Trigger the event, e.g. via WebDriver click.
+    action=lambda: session.find.css("#test", all=False).click(),
+)
 ```
 
 ## Adding support for an unsupported API

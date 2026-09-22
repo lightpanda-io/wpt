@@ -750,6 +750,15 @@ class WindowProtocolPart(ProtocolPart):
     name = "window"
 
     @abstractmethod
+    def create(self, type_hint=None):
+        """Create a new top-level browsing context without switching to it.
+
+        :param type_hint: Optional hint, either "tab" or "window", for the
+                          type of top-level browsing context to create.
+        :returns: A handle string identifying the new top-level browsing context."""
+        pass
+
+    @abstractmethod
     def set_rect(self, rect):
         """Restores the window to the given rect."""
         pass
@@ -1065,6 +1074,15 @@ class VirtualAuthenticatorProtocolPart(ProtocolPart):
         :param bool uv: the user verified flag"""
         pass
 
+    @abstractmethod
+    def set_credential_properties(self, authenticator_id, credential_id, props):
+        """Sets credential properties on an authenticator
+
+        :param str authenticator_id: The ID of the authenticator
+        :param str credential_id: The ID of the credential
+        :param props: The credential properties to set"""
+        pass
+
 
 class SPCTransactionsProtocolPart(ProtocolPart):
     """Protocol part for Secure Payment Confirmation transactions"""
@@ -1142,6 +1160,22 @@ class FedCMProtocolPart(ProtocolPart):
     @abstractmethod
     def reset_fedcm_cooldown(self):
         """Set the FedCM cooldown"""
+        pass
+
+
+class DigitalCredentialsProtocolPart(ProtocolPart):
+    """Protocol part for Digital Credentials"""
+    __metaclass__ = ABCMeta
+
+    name = "digital_credentials"
+
+    @abstractmethod
+    async def set_virtual_wallet_behavior(self, action, protocol=None, response=None, context=None):
+        """Set the virtual wallet behavior
+
+        :param str action: The action to take ("decline", "respond", "wait", "clear")
+        :param str protocol: The protocol requested (required for "respond")
+        :param dict response: The response data (optional for "respond")"""
         pass
 
 

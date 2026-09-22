@@ -542,6 +542,10 @@
         return create_context_action("get_named_cookie", context, {name});
     };
 
+    window.test_driver_internal.create_window = function(type=null, context=null) {
+        return create_context_action("create_window", context, {type});
+    };
+
     window.test_driver_internal.minimize_window = function(context=null) {
         return create_context_action("minimize_window", context, {});
     };
@@ -615,6 +619,10 @@
         return create_context_action("set_user_verified", context, {authenticator_id, uv});
     };
 
+    window.test_driver_internal.set_credential_properties = function(authenticator_id, credential_id, props, context=null) {
+        return create_context_action("set_credential_properties", context, {authenticator_id, credential_id, props});
+    };
+
     window.test_driver_internal.set_spc_transaction_mode = function(mode, context = null) {
         return create_context_action("set_spc_transaction_mode", context, {mode});
     };
@@ -653,6 +661,13 @@
 
     window.test_driver_internal.reset_fedcm_cooldown = function(context = null) {
         return create_context_action("reset_fedcm_cooldown", context, {});
+    };
+
+    window.test_driver_internal.set_virtual_wallet_behavior = function(action, protocol=null, response=null, context=null) {
+        return create_action("set_virtual_wallet_behavior", {
+            // Default to the current window.
+            context: context ?? window,
+            action, protocol, response});
     };
 
     window.test_driver_internal.create_virtual_sensor = function(sensor_type, sensor_params={}, context=null) {

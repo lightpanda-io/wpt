@@ -1423,6 +1423,33 @@
         },
 
         /**
+         * Creates a new top-level browsing context, as if the user requested
+         * a new tab or window from the browser.
+         *
+         * Matches the behaviour of the `New Window
+         * <https://www.w3.org/TR/webdriver/#new-window>`_
+         * WebDriver command.
+         *
+         * The new window is opened with `about:blank`,
+         * the test does not get a ``WindowProxy`` for it,
+         * and the returned WebDriver window handle is its only identifier.
+         *
+         * @param {String} type - Type hint for the new browsing context,
+         *                        either "tab" or "window" or null for the
+         *                        implementation default.
+         * @param {WindowProxy} context - Browsing context in which
+         *                                to run the call, or null to use the current
+         *                                browsing context.
+         *
+         * @returns {Promise} fulfilled with the WebDriver window handle
+         *                    (a string) of the new browsing context, or
+         *                    rejected if the WebDriver command errors.
+         */
+        create_window: function(type=null, context=null) {
+            return window.test_driver_internal.create_window(type, context);
+        },
+
+        /**
          * Minimizes the browser window.
          *
          * Matches the behaviour of the `Minimize
@@ -1733,6 +1760,24 @@
         },
 
         /**
+         * Sets credential properties on an authenticator.
+         *
+         * Matches the `Set Credential Properties
+         * <https://w3c.github.io/webauthn/#sctn-automation-set-credential-properties>`_
+         * WebDriver command.
+         *
+         * @param {String} authenticator_id - the ID of the authenticator
+         * @param {String} credential_id - the ID of the credential (base64url encoded)
+         * @param {Object} props - the credential properties to set
+         * @param {WindowProxy} context - Browsing context in which
+         *                                to run the call, or null for the current
+         *                                browsing context.
+         */
+        set_credential_properties: function(authenticator_id, credential_id, props, context=null) {
+            return window.test_driver_internal.set_credential_properties(authenticator_id, credential_id, props, context);
+        },
+
+        /**
          * Sets the storage access rule for an origin when embedded
          * in a third-party context.
          *
@@ -1984,6 +2029,25 @@
         reset_fedcm_cooldown: function(context=null) {
           return window.test_driver_internal.reset_fedcm_cooldown(context);
         },
+
+        /**
+         * Sets the behavior for the virtual wallet.
+         *
+         * Matches the `Set Virtual Wallet Behavior
+         * <https://w3c-fedid.github.io/digital-credentials/#automated-testing>`_
+         * WebDriver command.
+         *
+         * @param {String} action - The action to take ("decline", "respond", "wait", "clear").
+         * @param {String} [protocol=null] - The protocol requested (required for "respond").
+         * @param {Object} [response=null] - The response data (optional for "respond").
+         * @param {WindowProxy} [context=null] - Browsing context in which to run the call.
+         *
+         * @returns {Promise} Fulfilled after the behavior has been set.
+         */
+        set_virtual_wallet_behavior: function(action, protocol=null, response=null, context=null) {
+          return window.test_driver_internal.set_virtual_wallet_behavior(action, protocol, response, context);
+        },
+
 
         /**
          * Creates a virtual sensor for use with the Generic Sensors APIs.
@@ -2340,6 +2404,10 @@
         /**
          * Gets the current globally-applied privacy control status
          *
+         * Matches the `Get Global Privacy Control
+         * <https://www.w3.org/TR/gpc/#get-global-privacy-control>`_
+         * WebDriver command.
+         *
          * @returns {Promise} Fulfils with an object with boolean property `gpc`
          *                    that encodes the current "do not sell or share"
          *                    signal the browser is configured to convey.
@@ -2349,11 +2417,15 @@
         },
 
         /**
-         * Gets the current globally-applied privacy control status
+         * Sets and then gets the current globally-applied privacy control status
          *
-         * @param {bool} newValue - The a boolean that is true if the browers
-         *                          should convey a "do not sell or share" signal
-         *                          and false otherwise
+         * Matches the `Set Global Privacy Control
+         * <https://www.w3.org/TR/gpc/#set-global-privacy-control>`_
+         * WebDriver command.
+         *
+         * @param {boolean} newValue - A boolean that is true if the browser
+         *                             should convey a "do not sell or share" signal
+         *                             and false otherwise
          *
          * @returns {Promise} Fulfils with an object with boolean property `gpc`
          *                    that encodes the new "do not sell or share"
@@ -2599,6 +2671,10 @@
             throw new Error("freeze() is not implemented by testdriver-vendor.js");
         },
 
+        async create_window(type=null, context=null) {
+            throw new Error("create_window() is not implemented by testdriver-vendor.js");
+        },
+
         async minimize_window(context=null) {
             throw new Error("minimize_window() is not implemented by testdriver-vendor.js");
         },
@@ -2651,6 +2727,10 @@
             throw new Error("set_user_verified() is not implemented by testdriver-vendor.js");
         },
 
+        async set_credential_properties(authenticator_id, credential_id, props, context=null) {
+            throw new Error("set_credential_properties() is not implemented by testdriver-vendor.js");
+        },
+
         async set_storage_access(origin, embedding_origin, blocked, context=null) {
             throw new Error("set_storage_access() is not implemented by testdriver-vendor.js");
         },
@@ -2694,6 +2774,11 @@
         async reset_fedcm_cooldown(context=null) {
             throw new Error("reset_fedcm_cooldown() is not implemented by testdriver-vendor.js");
         },
+
+        async set_virtual_wallet_behavior(action, protocol=null, response=null, context=null) {
+            throw new Error("set_virtual_wallet_behavior() is not implemented by testdriver-vendor.js");
+        },
+
 
         async create_virtual_sensor(sensor_type, sensor_params, context=null) {
             throw new Error("create_virtual_sensor() is not implemented by testdriver-vendor.js");

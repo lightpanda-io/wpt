@@ -357,6 +357,56 @@ def test_multiple_testharnessreport():
             ]
 
 
+def test_testharnessreport_without_testharness():
+    code = b"""
+<html xmlns="http://www.w3.org/1999/xhtml">
+<script src="/resources/testharnessreport.js"></script>
+</html>
+"""
+    error_map = check_with_files(code)
+
+    for (filename, (errors, kind)) in error_map.items():
+        check_errors(errors)
+
+        if kind in ["web-lax", "web-strict"]:
+            assert errors == [
+                ("TESTHARNESSREPORT-WITHOUT-TESTHARNESS",
+                    "File contains <script src='/resources/testharnessreport.js'> but not `testharness.js`",
+                    filename,
+                    None),
+            ]
+        elif kind == "python":
+            assert errors == [
+                ("PARSE-FAILED", "Unable to parse file", filename, 2),
+            ]
+
+
+def test_multiple_testharnessreport_without_testharness():
+    code = b"""
+<html xmlns="http://www.w3.org/1999/xhtml">
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+</html>
+"""
+    error_map = check_with_files(code)
+
+    for (filename, (errors, kind)) in error_map.items():
+        check_errors(errors)
+
+        if kind in ["web-lax", "web-strict"]:
+            assert errors == [
+                ("TESTHARNESSREPORT-WITHOUT-TESTHARNESS",
+                    "File contains <script src='/resources/testharnessreport.js'> but not `testharness.js`",
+                    filename,
+                    None),
+                ("MULTIPLE-TESTHARNESSREPORT", "More than one `<script src='/resources/testharnessreport.js'>`", filename, None),
+            ]
+        elif kind == "python":
+            assert errors == [
+                ("PARSE-FAILED", "Unable to parse file", filename, 2),
+            ]
+
+
 def test_testdriver_in_unsupported():
     code = b"""
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -731,6 +781,60 @@ def test_missing_testdriver_vendor():
             ]
 
 
+def test_testdriver_vendor_without_testdriver():
+    code = b"""
+<html xmlns="http://www.w3.org/1999/xhtml">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+</html>
+"""
+    error_map = check_with_files(code)
+
+    for (filename, (errors, kind)) in error_map.items():
+        check_errors(errors)
+
+        if kind in ["web-lax", "web-strict"]:
+            assert errors == [
+                ("TESTDRIVER-VENDOR-WITHOUT-TESTDRIVER",
+                    "File contains `<script src='/resources/testdriver-vendor.js'>` but not `testdriver.js`",
+                    filename,
+                    None),
+            ]
+        elif kind == "python":
+            assert errors == [
+                ("PARSE-FAILED", "Unable to parse file", filename, 2),
+            ]
+
+
+def test_multiple_testdriver_vendor_without_testdriver():
+    code = b"""
+<html xmlns="http://www.w3.org/1999/xhtml">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+<script src="/resources/testdriver-vendor.js"></script>
+</html>
+"""
+    error_map = check_with_files(code)
+
+    for (filename, (errors, kind)) in error_map.items():
+        check_errors(errors)
+
+        if kind in ["web-lax", "web-strict"]:
+            assert errors == [
+                ("TESTDRIVER-VENDOR-WITHOUT-TESTDRIVER",
+                    "File contains `<script src='/resources/testdriver-vendor.js'>` but not `testdriver.js`",
+                    filename,
+                    None),
+                ("MULTIPLE-TESTDRIVER-VENDOR", "More than one `<script src='/resources/testdriver-vendor.js'>`", filename, None),
+            ]
+        elif kind == "python":
+            assert errors == [
+                ("PARSE-FAILED", "Unable to parse file", filename, 2),
+            ]
+
+
 def test_testharness_path():
     code = b"""\
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -808,6 +912,12 @@ def test_testdriver_path():
             expected.append(("PARSE-FAILED", "Unable to parse file", filename, 1))
         elif kind in ["web-lax", "web-strict"]:
             expected.extend([
+                (
+                    "TESTDRIVER-VENDOR-WITHOUT-TESTDRIVER",
+                    "File contains `<script src='/resources/testdriver-vendor.js'>` but not `testdriver.js`",
+                    filename,
+                    None,
+                ),
                 ("TESTDRIVER-PATH", "testdriver.js script seen with incorrect path", filename, None),
                 ("TESTDRIVER-PATH", "testdriver.js script seen with incorrect path", filename, None),
                 ("TESTDRIVER-PATH", "testdriver.js script seen with incorrect path", filename, None),
@@ -1132,31 +1242,25 @@ def test_invalid_meta_file():
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - file1.html
+rules:
+- file1.html: [feature1]
 """,
         []
     ),
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - file*.html
+rules:
+- file*.html: [feature1]
 """,
         []
     ),
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - file*.html
-  - foo.html
+rules:
+- file*.html: [feature1]
+- foo.html: [feature1]
 """,
         [
             ("MISSING-WEB-FEATURES-FILE",
@@ -1168,11 +1272,9 @@ features:
     (
         ["bar1.html", "bar2.html", "bar3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - file*.html
-  - bar*.html
+rules:
+- file*.html: [feature1]
+- bar*.html: [feature1]
 """,
         [
             ("MISSING-WEB-FEATURES-FILE",
@@ -1184,10 +1286,8 @@ features:
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - foo.html
+rules:
+- foo.html: [feature1]
 """,
         [
             ("MISSING-WEB-FEATURES-FILE",
@@ -1199,62 +1299,38 @@ features:
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files: "**"
+rules:
+- "**": [feature1]
 """,
         []
     ),
     (
         ["file1.html", "file2.html", "file3.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - "*"
-  - "!file3.html"
+rules:
+- file3.html: []
+- "*": [feature1]
 """,
         []
     ),
     (
         ["foobar.html", "foo.html", "bar.html"],
         b"""\
-features:
-- name: feature1
-  files:
-  - "*foo*"
-  - "!*bar*"
+rules:
+- "*bar*": []
+- "*foo*": [feature1]
 """,
         []
     ),
     (
-        ["foo-1.html", "bar-1.html"],
-        b"""\
-features:
-- name: feature1
-  files:
-  - foo-*
-  - "!bar-*"
-""",
-        [
-            ("UNNECESSARY-EXCLUSION-IN-WEB-FEATURES-FILE",
-             "The WEB_FEATURES.yml file contains a redundant or inoperable exclusion pattern: "
-             "'!bar-*' in feature 'feature1'",
-             "css/WEB_FEATURES.yml",
-             None),
-        ]
-    ),
-    (
         ["test.html", "META.yml"],
         b"""\
-features:
-- name: feature1
-  files:
-  - META.yml
+rules:
+- META.yml: [feature1]
 """,
         [
             ("NON-TEST-FILE-IN-WEB-FEATURES-FILE",
-             "The WEB_FEATURES.yml file references a non-test file: 'META.yml' in feature 'feature1'",
+             "The WEB_FEATURES.yml file references a non-test file: 'META.yml' in rule 'META.yml: ['feature1']'",
              "css/WEB_FEATURES.yml",
              None),
         ]
@@ -1262,14 +1338,12 @@ features:
     (
         ["test.html", "test.html.headers"],
         b"""\
-features:
-- name: feature1
-  files:
-  - test.html.headers
+rules:
+- test.html.headers: [feature1]
 """,
         [
             ("NON-TEST-FILE-IN-WEB-FEATURES-FILE",
-             "The WEB_FEATURES.yml file references a non-test file: 'test.html.headers' in feature 'feature1'",
+             "The WEB_FEATURES.yml file references a non-test file: 'test.html.headers' in rule 'test.html.headers: ['feature1']'",
              "css/WEB_FEATURES.yml",
              None),
         ]
@@ -1277,14 +1351,12 @@ features:
     (
         ["test.html", ".hidden"],
         b"""\
-features:
-- name: feature1
-  files:
-  - .hidden
+rules:
+- .hidden: [feature1]
 """,
         [
             ("NON-TEST-FILE-IN-WEB-FEATURES-FILE",
-             "The WEB_FEATURES.yml file references a non-test file: '.hidden' in feature 'feature1'",
+             "The WEB_FEATURES.yml file references a non-test file: '.hidden' in rule '.hidden: ['feature1']'",
              "css/WEB_FEATURES.yml",
              None),
         ]
@@ -1292,14 +1364,12 @@ features:
     (
         ["test.html", "MANIFEST.json"],
         b"""\
-features:
-- name: feature1
-  files:
-  - MANIFEST.json
+rules:
+- MANIFEST.json: [feature1]
 """,
         [
             ("NON-TEST-FILE-IN-WEB-FEATURES-FILE",
-             "The WEB_FEATURES.yml file references a non-test file: 'MANIFEST.json' in feature 'feature1'",
+             "The WEB_FEATURES.yml file references a non-test file: 'MANIFEST.json' in rule 'MANIFEST.json: ['feature1']'",
              "css/WEB_FEATURES.yml",
              None),
         ]
@@ -1335,20 +1405,6 @@ def test_valid_web_features_file(monkeypatch, files, yml, expected_errors):
             None),
         ]
     ),
-    (
-        b"""\
-features:
-- name: feature1
-  files:
-  - "**"
-""",
-        [
-            ('INVALID-WEB-FEATURES-FILE',
-            'The WEB_FEATURES.yml file contains an invalid structure: Feature feature1 contains "**" in a list. It should be `files: "**"`',
-            "css/WEB_FEATURES.yml",
-            None),
-        ]
-    ),
 ])
 def test_invalid_web_features_file(contents, expected_errors):
     # Check when the value is named correctly. It should find the error.
@@ -1366,14 +1422,10 @@ def test_invalid_web_features_file(contents, expected_errors):
 
 def test_duplicate_keys_invalid_web_features_file():
     code = b"""\
-features:
-- name: feature1
-  files:
-  - feature1-*
-features:
-- name: feature2
-  files:
-  - "feature2-*"
+rules:
+- feature1-*: [feature1]
+rules:
+- "feature2-*": [feature2]
 """
     # Check when the value is named correctly. It should find the error.
     errors = check_file_contents("", "css/WEB_FEATURES.yml", io.BytesIO(code))
@@ -1381,7 +1433,7 @@ features:
 
     assert errors == [
         ('INVALID-WEB-FEATURES-FILE',
-         "The WEB_FEATURES.yml file contains an invalid structure: Duplicate 'features' key found in YAML.",
+         "The WEB_FEATURES.yml file contains an invalid structure: Duplicate 'rules' key found in YAML.",
          "css/WEB_FEATURES.yml",
          None),
     ]
